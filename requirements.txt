@@ -1,0 +1,6 @@
+django
+psycopg2-binary
+
+# errorutils — install from TestPyPI:
+# pip install -i https://test.pypi.org/simple/ the-error-utils==0.2.0
+the-error-utils==0.2.0

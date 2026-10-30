@@ -1,0 +1,149 @@
+{% extends "base.html" %}
+
+{% block title %}Tasks - Trackera{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Tasks</h1>
+    <p class="page-subtitle">Track individual action items, deadlines, and logged time across projects.</p>
+  </div>
+</div>
+
+<!-- Task Filters Bar -->
+<form method="get" class="filter-bar">
+  <div class="filter-inputs">
+    <input type="text" name="q" value="{{ search_query }}" placeholder="Search tasks..." class="form-control" style="width: 220px;">
+
+    <select name="project" class="form-control auto-submit-filter" style="width: 180px;">
+      <option value="">All Projects</option>
+      {% for p in projects %}
+      <option value="{{ p.id }}" {% if selected_project == p.id %}selected{% endif %}>{{ p.title }}</option>
+      {% endfor %}
+    </select>
+
+    <select name="status" class="form-control auto-submit-filter" style="width: 150px;">
+      <option value="">All Statuses</option>
+      {% for val, label in status_choices %}
+      <option value="{{ val }}" {% if selected_status == val %}selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+
+    <select name="priority" class="form-control auto-submit-filter" style="width: 150px;">
+      <option value="">All Priorities</option>
+      {% for val, label in priority_choices %}
+      <option value="{{ val }}" {% if selected_priority == val %}selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+
+    <select name="assigned" class="form-control auto-submit-filter" style="width: 160px;">
+      <option value="">All Assignments</option>
+      <option value="me" {% if selected_assigned == 'me' %}selected{% endif %}>Assigned to Me</option>
+    </select>
+  </div>
+
+  <div style="display: flex; gap: 0.5rem;">
+    <button type="submit" class="btn btn-secondary btn-sm">Filter</button>
+    {% if search_query or selected_project or selected_status or selected_priority or selected_assigned %}
+    <a href="{% url 'task_list' %}" class="btn btn-outline-primary btn-sm">Reset</a>
+    {% endif %}
+  </div>
+</form>
+
+<!-- Tasks Table -->
+<div class="card">
+  {% if tasks %}
+  <div class="table-responsive">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Task</th>
+          <th>Project</th>
+          <th>Assignee</th>
+          <th>Priority</th>
+          <th>Status</th>
+          <th>Due Date</th>
+          <th>Hours Logged / Est</th>
+          <th style="text-align: right;">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for t in tasks %}
+        <tr>
+          <td>
+            <a href="{% url 'task_detail' t.pk %}" style="font-weight: 600; color: var(--text-main); text-decoration: none;">
+              {{ t.title }}
+            </a>
+          </td>
+          <td>
+            <a href="{% url 'project_detail' t.project.pk %}" style="color: var(--primary-dark); text-decoration: none; font-size: 0.88rem; font-weight: 500;">
+              {{ t.project.title }}
+            </a>
+          </td>
+          <td>
+            {% if t.assigned_to %}
+              <span class="user-badge" style="display: inline-flex; padding: 0.2rem 0.5rem; font-size: 0.8rem;">
+                {{ t.assigned_to.first_name|default:t.assigned_to.username }}
+              </span>
+            {% else %}
+              <span style="color: var(--text-muted); font-size: 0.82rem;">Unassigned</span>
+            {% endif %}
+          </td>
+          <td>
+            <span class="badge badge-{{ t.priority }}">{{ t.get_priority_display }}</span>
+          </td>
+          <td>
+            <form method="post" action="{% url 'task_quick_status' t.pk %}" class="quick-status-form" style="display: inline-block;">
+              {% csrf_token %}
+              <select name="status" class="form-control" style="padding: 0.25rem 0.5rem; font-size: 0.8rem; border-radius: var(--radius-sm); width: 125px;">
+                {% for st_val, st_lbl in status_choices %}
+                <option value="{{ st_val }}" {% if t.status == st_val %}selected{% endif %}>{{ st_lbl }}</option>
+                {% endfor %}
+              </select>
+            </form>
+          </td>
+          <td>
+            {% if t.due_date %}
+              <span style="font-size: 0.85rem; {% if t.is_overdue %}color: #e11d48; font-weight: 600;{% endif %}">
+                {{ t.due_date|date:"M d, Y" }}
+                {% if t.is_overdue %}(Overdue){% endif %}
+              </span>
+            {% else %}
+              <span style="color: var(--text-muted); font-size: 0.85rem;">None</span>
+            {% endif %}
+          </td>
+          <td>
+            <span style="font-weight: 600; color: var(--primary-dark);">{{ t.total_logged_hours }}h</span>
+            <span style="color: var(--text-muted);">/ {{ t.estimated_hours }}h</span>
+          </td>
+          <td style="text-align: right;">
+            <div style="display: inline-flex; gap: 0.35rem;">
+              <a href="{% url 'task_detail' t.pk %}" class="btn btn-secondary btn-sm">Details</a>
+              {% if t.project.owner == user or t.assigned_to == user or user.is_superuser %}
+              <a href="{% url 'task_update' t.pk %}" class="btn btn-outline-primary btn-sm">Edit</a>
+              {% endif %}
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty-state">
+    <div class="empty-state-icon">&check;</div>
+    <h3 class="empty-state-title">No tasks found</h3>
+    <p class="empty-state-text">
+      {% if search_query or selected_project or selected_status or selected_priority or selected_assigned %}
+        No tasks matched your active search or filters.
+      {% else %}
+        You do not have any tasks created or assigned to you yet.
+      {% endif %}
+    </p>
+    {% if search_query or selected_project or selected_status or selected_priority or selected_assigned %}
+    <a href="{% url 'task_list' %}" class="btn btn-secondary btn-sm">Clear Filters</a>
+    {% endif %}
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

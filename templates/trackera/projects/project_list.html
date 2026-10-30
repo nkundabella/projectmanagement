@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+
+{% block title %}Projects - Trackera{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Projects</h1>
+    <p class="page-subtitle">Manage, track, and monitor your team's initiatives and budgets.</p>
+  </div>
+  <div>
+    <a href="{% url 'project_create' %}" class="btn btn-primary" id="btn-create-project">+ New Project</a>
+  </div>
+</div>
+
+<!-- Filters Bar -->
+<form method="get" class="filter-bar">
+  <div class="filter-inputs">
+    <input type="text" name="q" value="{{ search_query }}" placeholder="Search projects by title..." class="form-control" style="width: 260px;">
+    
+    <select name="status" class="form-control auto-submit-filter" style="width: 170px;">
+      <option value="">All Statuses</option>
+      {% for val, label in status_choices %}
+      <option value="{{ val }}" {% if selected_status == val %}selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+
+    <select name="priority" class="form-control auto-submit-filter" style="width: 160px;">
+      <option value="">All Priorities</option>
+      {% for val, label in priority_choices %}
+      <option value="{{ val }}" {% if selected_priority == val %}selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+  </div>
+
+  <div style="display: flex; gap: 0.5rem;">
+    <button type="submit" class="btn btn-secondary btn-sm">Search</button>
+    {% if search_query or selected_status or selected_priority %}
+    <a href="{% url 'project_list' %}" class="btn btn-outline-primary btn-sm">Reset</a>
+    {% endif %}
+  </div>
+</form>
+
+<!-- Projects Cards Grid -->
+{% if projects %}
+<div class="grid grid-cols-3">
+  {% for proj in projects %}
+  <div class="card" style="display: flex; flex-direction: column; justify-content: space-between;">
+    <div>
+      <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 0.5rem; margin-bottom: 0.75rem;">
+        <span class="badge badge-{{ proj.status }}">{{ proj.get_status_display }}</span>
+        <span class="badge badge-{{ proj.priority }}">{{ proj.get_priority_display }}</span>
+      </div>
+
+      <h2 style="font-size: 1.25rem; font-weight: 700; margin-bottom: 0.5rem;">
+        <a href="{% url 'project_detail' proj.pk %}" style="color: var(--text-main); text-decoration: none;">
+          {{ proj.title }}
+        </a>
+      </h2>
+
+      <p style="font-size: 0.88rem; color: var(--text-muted); line-height: 1.45; margin-bottom: 1.25rem; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
+        {{ proj.description|default:"No description provided." }}
+      </p>
+    </div>
+
+    <div>
+      <!-- Progress Bar -->
+      <div style="display: flex; justify-content: space-between; font-size: 0.8rem; font-weight: 600; margin-bottom: 0.25rem;">
+        <span style="color: var(--text-muted);">Progress</span>
+        <span style="color: var(--primary-dark);">{{ proj.completion_percentage }}%</span>
+      </div>
+      <div class="progress-bar-container" style="margin: 0 0 1rem;">
+        <div class="progress-bar-fill" style="width: {{ proj.completion_percentage }}%;"></div>
+      </div>
+
+      <!-- Metadata summary -->
+      <div style="display: flex; justify-content: space-between; padding-top: 0.75rem; border-top: 1px solid var(--border-light); font-size: 0.82rem; color: var(--text-muted); margin-bottom: 1rem;">
+        <div>
+          <strong>{{ proj.tasks.count }}</strong> Tasks
+        </div>
+        <div>
+          Budget: <strong>${{ proj.budget|floatformat:2 }}</strong>
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div style="display: flex; gap: 0.5rem;">
+        <a href="{% url 'project_detail' proj.pk %}" class="btn btn-secondary btn-sm" style="flex: 1;">View Details</a>
+        {% if proj.owner == user or user.is_superuser %}
+        <a href="{% url 'project_update' proj.pk %}" class="btn btn-outline-primary btn-sm" title="Edit project">Edit</a>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<div class="empty-state">
+  <div class="empty-state-icon">&boxbox;</div>
+  <h3 class="empty-state-title">No projects found</h3>
+  <p class="empty-state-text">
+    {% if search_query or selected_status or selected_priority %}
+      No projects matched your active filters. Try resetting the search criteria.
+    {% else %}
+      You don't have any projects registered yet. Create your first project to get organized!
+    {% endif %}
+  </p>
+  {% if search_query or selected_status or selected_priority %}
+    <a href="{% url 'project_list' %}" class="btn btn-secondary btn-sm">Clear Filters</a>
+  {% else %}
+    <a href="{% url 'project_create' %}" class="btn btn-primary btn-sm">+ Create Project</a>
+  {% endif %}
+</div>
+{% endif %}
+{% endblock %}
