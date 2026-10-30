@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+
+{% block title %}Sign In - Trackera{% endblock %}
+
+{% block content %}
+<div class="card form-card" style="margin-top: 2rem;">
+  <div style="text-align: center; margin-bottom: 1.5rem;">
+    <div class="brand-icon" style="margin: 0 auto 0.75rem; width: 48px; height: 48px; font-size: 1.5rem;">T</div>
+    <h1 class="page-title" style="font-size: 1.65rem;">Welcome to Trackera</h1>
+    <p class="page-subtitle">Sign in to manage your projects, tasks, and team deliverables.</p>
+  </div>
+
+  <form method="post" action="{% url 'login' %}">
+    {% csrf_token %}
+    {% if request.GET.next %}
+    <input type="hidden" name="next" value="{{ request.GET.next }}">
+    {% endif %}
+
+    <div class="form-group">
+      <label class="form-label" for="id_username">Username</label>
+      <input type="text" name="username" autofocus required id="id_username" class="form-control" placeholder="Enter your username">
+    </div>
+
+    <div class="form-group">
+      <label class="form-label" for="id_password">Password</label>
+      <input type="password" name="password" required id="id_password" class="form-control" placeholder="Enter your password">
+    </div>
+
+    <div style="margin-top: 1.5rem;">
+      <button type="submit" class="btn btn-primary" style="width: 100%;" id="btn-submit-login">Sign In</button>
+    </div>
+  </form>
+
+  <div style="text-align: center; margin-top: 1.5rem; padding-top: 1.25rem; border-top: 1px solid var(--border-light); font-size: 0.9rem; color: var(--text-muted);">
+    Don't have an account yet? <a href="{% url 'register' %}" style="color: var(--primary-dark); font-weight: 600; text-decoration: none;">Create an account</a>
+  </div>
+</div>
+{% endblock %}
