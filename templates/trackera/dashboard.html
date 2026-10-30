@@ -1,0 +1,203 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Trackera{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Workspace Dashboard</h1>
+    <p class="page-subtitle">Real-time portfolio overview, task throughput, and analytics.</p>
+  </div>
+  <div style="display: flex; gap: 0.75rem;">
+    <a href="{% url 'project_create' %}" class="btn btn-primary" id="dashboard-new-project-btn">+ Create Project</a>
+    <a href="{% url 'task_list' %}" class="btn btn-secondary">View All Tasks</a>
+  </div>
+</div>
+
+<!-- Stat Cards Grid -->
+<div class="grid grid-cols-4" style="margin-bottom: 2rem;">
+  <div class="stat-card">
+    <div class="stat-label">Total Projects</div>
+    <div class="stat-value">{{ stats.total_projects|default:0 }}</div>
+    <div class="stat-meta positive">
+      <span>{{ stats.active_projects|default:0 }} active</span> &bull; <span>{{ stats.completed_projects|default:0 }} done</span>
+    </div>
+  </div>
+
+  <div class="stat-card">
+    <div class="stat-label">Tasks Breakdown</div>
+    <div class="stat-value">{{ stats.total_tasks|default:0 }}</div>
+    <div class="stat-meta">
+      <span>{{ stats.completed_tasks|default:0 }} completed</span> &bull; <span>{{ stats.in_progress_tasks|default:0 }} in progress</span>
+    </div>
+  </div>
+
+  <div class="stat-card">
+    <div class="stat-label">Overall Completion</div>
+    <div class="stat-value">{{ stats.overall_completion_rate|default:0 }}%</div>
+    <div class="progress-bar-container">
+      <div class="progress-bar-fill" style="width: {{ stats.overall_completion_rate|default:0 }}%;"></div>
+    </div>
+  </div>
+
+  <div class="stat-card">
+    <div class="stat-label">Overdue Tasks</div>
+    <div class="stat-value" style="{% if stats.overdue_tasks > 0 %}color: #e11d48;{% endif %}">
+      {{ stats.overdue_tasks|default:0 }}
+    </div>
+    <div class="stat-meta">
+      {% if stats.overdue_tasks > 0 %}
+        <span style="color: #e11d48; font-weight: 600;">Action required</span>
+      {% else %}
+        <span style="color: var(--primary-dark); font-weight: 500;">All deadlines on track</span>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<!-- Budget & Work Metrics Card -->
+<div class="card" style="margin-bottom: 2rem;">
+  <div class="card-header">
+    <h2 class="card-title">Financial &amp; Effort Analytics</h2>
+    <span class="badge badge-completed">Verified by errorutils</span>
+  </div>
+  <div class="grid grid-cols-3">
+    <div>
+      <div class="stat-label">Total Portfolio Budget</div>
+      <div style="font-size: 1.5rem; font-weight: 700; color: var(--text-main); margin-top: 0.25rem;">
+        ${{ stats.total_budget|floatformat:2 }}
+      </div>
+      <div class="stat-meta">Aggregated across active projects</div>
+    </div>
+    <div>
+      <div class="stat-label">Average Project Budget</div>
+      <div style="font-size: 1.5rem; font-weight: 700; color: var(--text-main); margin-top: 0.25rem;">
+        ${{ stats.avg_budget|floatformat:2 }}
+      </div>
+      <div class="stat-meta">Calculated using errorutils.ops.average</div>
+    </div>
+    <div>
+      <div class="stat-label">Your Logged Hours</div>
+      <div style="font-size: 1.5rem; font-weight: 700; color: var(--primary-dark); margin-top: 0.25rem;">
+        {{ stats.total_user_logged_hours|default:0 }}h
+      </div>
+      <div class="stat-meta">Avg Task Estimate: {{ stats.avg_task_estimate|default:0 }}h</div>
+    </div>
+  </div>
+</div>
+
+<!-- Content Split: Recent Projects and Priority Tasks -->
+<div class="grid grid-cols-2">
+  <!-- Recent Projects -->
+  <div class="card">
+    <div class="card-header">
+      <h2 class="card-title">Recent Projects</h2>
+      <a href="{% url 'project_list' %}" style="font-size: 0.85rem; font-weight: 600; color: var(--primary-dark); text-decoration: none;">View All &rarr;</a>
+    </div>
+
+    {% if stats.recent_projects %}
+    <div class="table-responsive">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Project</th>
+            <th>Status</th>
+            <th>Progress</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for proj in stats.recent_projects %}
+          <tr>
+            <td>
+              <a href="{% url 'project_detail' proj.pk %}" style="font-weight: 600; color: var(--text-main); text-decoration: none;">
+                {{ proj.title }}
+              </a>
+              <div style="font-size: 0.78rem; color: var(--text-muted);">{{ proj.tasks.count }} tasks</div>
+            </td>
+            <td>
+              <span class="badge badge-{{ proj.status }}">{{ proj.get_status_display }}</span>
+            </td>
+            <td style="min-width: 110px;">
+              <div style="font-size: 0.8rem; font-weight: 600; margin-bottom: 0.2rem;">{{ proj.completion_percentage }}%</div>
+              <div class="progress-bar-container" style="margin: 0;">
+                <div class="progress-bar-fill" style="width: {{ proj.completion_percentage }}%;"></div>
+              </div>
+            </td>
+            <td>
+              <a href="{% url 'project_detail' proj.pk %}" class="btn btn-secondary btn-sm">View</a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="empty-state">
+      <div class="empty-state-icon">&boxbox;</div>
+      <h3 class="empty-state-title">No projects yet</h3>
+      <p class="empty-state-text">Create your first project to start tracking deliverables, tasks, and budgets.</p>
+      <a href="{% url 'project_create' %}" class="btn btn-primary btn-sm">+ Create Project</a>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Priority & Urgent Tasks -->
+  <div class="card">
+    <div class="card-header">
+      <h2 class="card-title">High Priority Tasks</h2>
+      <a href="{% url 'task_list' %}" style="font-size: 0.85rem; font-weight: 600; color: var(--primary-dark); text-decoration: none;">View All &rarr;</a>
+    </div>
+
+    {% if stats.urgent_tasks %}
+    <div class="table-responsive">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Task</th>
+            <th>Priority</th>
+            <th>Status</th>
+            <th>Due Date</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for t in stats.urgent_tasks %}
+          <tr>
+            <td>
+              <a href="{% url 'task_detail' t.pk %}" style="font-weight: 600; color: var(--text-main); text-decoration: none;">
+                {{ t.title }}
+              </a>
+              <div style="font-size: 0.78rem; color: var(--text-muted);">{{ t.project.title }}</div>
+            </td>
+            <td>
+              <span class="badge badge-{{ t.priority }}">{{ t.get_priority_display }}</span>
+            </td>
+            <td>
+              <span class="badge badge-{{ t.status }}">{{ t.get_status_display }}</span>
+            </td>
+            <td>
+              {% if t.due_date %}
+                <span style="font-size: 0.85rem; {% if t.is_overdue %}color: #e11d48; font-weight: 600;{% endif %}">
+                  {{ t.due_date|date:"M d, Y" }}
+                  {% if t.is_overdue %}(Overdue){% endif %}
+                </span>
+              {% else %}
+                <span style="color: var(--text-muted); font-size: 0.85rem;">None</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="empty-state">
+      <div class="empty-state-icon">&check;</div>
+      <h3 class="empty-state-title">No urgent tasks pending</h3>
+      <p class="empty-state-text">All high and urgent priority items have either been resolved or none are scheduled.</p>
+      <a href="{% url 'task_list' %}" class="btn btn-secondary btn-sm">Browse All Tasks</a>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }} - Trackera{% endblock %}
+
+{% block content %}
+<div style="margin-bottom: 1.5rem;">
+  <a href="{% if task %}{% url 'task_detail' task.pk %}{% elif project %}{% url 'project_detail' project.pk %}{% else %}{% url 'task_list' %}{% endif %}" style="color: var(--text-muted); font-size: 0.9rem; text-decoration: none;">
+    &larr; Back to {% if task %}{{ task.title }}{% elif project %}{{ project.title }}{% else %}Tasks{% endif %}
+  </a>
+</div>
+
+<div class="card form-card">
+  <div class="card-header" style="border-bottom: 1px solid var(--border-light); padding-bottom: 1rem; margin-bottom: 1.5rem;">
+    <h1 class="card-title" style="font-size: 1.45rem;">{{ title }}</h1>
+  </div>
+
+  <form method="post">
+    {% csrf_token %}
+
+    <div class="form-group">
+      <label class="form-label" for="{{ form.title.id_for_label }}">Task Title *</label>
+      {{ form.title }}
+      {% if form.title.errors %}<ul class="form-errors">{% for err in form.title.errors %}<li>{{ err }}</li>{% endfor %}</ul>{% endif %}
+    </div>
+
+    <div class="form-group">
+      <label class="form-label" for="{{ form.description.id_for_label }}">Description</label>
+      {{ form.description }}
+      {% if form.description.errors %}<ul class="form-errors">{% for err in form.description.errors %}<li>{{ err }}</li>{% endfor %}</ul>{% endif %}
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label" for="{{ form.assigned_to.id_for_label }}">Assignee</label>
+        {{ form.assigned_to }}
+        {% if form.assigned_to.errors %}<ul class="form-errors">{% for err in form.assigned_to.errors %}<li>{{ err }}</li>{% endfor %}</ul>{% endif %}
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="{{ form.priority.id_for_label }}">Priority</label>
+        {{ form.priority }}
+        {% if form.priority.errors %}<ul class="form-errors">{% for err in form.priority.errors %}<li>{{ err }}</li>{% endfor %}</ul>{% endif %}
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label" for="{{ form.status.id_for_label }}">Status</label>
+        {{ form.status }}
+        {% if form.status.errors %}<ul class="form-errors">{% for err in form.status.errors %}<li>{{ err }}</li>{% endfor %}</ul>{% endif %}
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="{{ form.estimated_hours.id_for_label }}">Estimated Hours</label>
+        {{ form.estimated_hours }}
+        {% if form.estimated_hours.errors %}<ul class="form-errors">{% for err in form.estimated_hours.errors %}<li>{{ err }}</li>{% endfor %}</ul>{% endif %}
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label" for="{{ form.due_date.id_for_label }}">Due Date</label>
+      {{ form.due_date }}
+      {% if form.due_date.errors %}<ul class="form-errors">{% for err in form.due_date.errors %}<li>{{ err }}</li>{% endfor %}</ul>{% endif %}
+    </div>
+
+    <div style="display: flex; gap: 0.75rem; margin-top: 1.5rem; justify-content: flex-end;">
+      <a href="{% if task %}{% url 'task_detail' task.pk %}{% elif project %}{% url 'project_detail' project.pk %}{% else %}{% url 'task_list' %}{% endif %}" class="btn btn-secondary">Cancel</a>
+      <button type="submit" class="btn btn-primary" id="btn-save-task">{{ action_label }}</button>
+    </div>
+  </form>
+</div>
+{% endblock %}

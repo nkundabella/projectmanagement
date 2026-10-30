@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+
+{% block title %}Register - Trackera{% endblock %}
+
+{% block content %}
+<div class="card form-card" style="margin-top: 1.5rem;">
+  <div style="text-align: center; margin-bottom: 1.5rem;">
+    <div class="brand-icon" style="margin: 0 auto 0.75rem; width: 48px; height: 48px; font-size: 1.5rem;">T</div>
+    <h1 class="page-title" style="font-size: 1.65rem;">Create Your Account</h1>
+    <p class="page-subtitle">Get started with your project management workspace today.</p>
+  </div>
+
+  <form method="post" action="{% url 'register' %}">
+    {% csrf_token %}
+
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label" for="{{ form.first_name.id_for_label }}">First Name</label>
+        {{ form.first_name }}
+        {% if form.first_name.errors %}<ul class="form-errors">{% for err in form.first_name.errors %}<li>{{ err }}</li>{% endfor %}</ul>{% endif %}
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="{{ form.last_name.id_for_label }}">Last Name</label>
+        {{ form.last_name }}
+        {% if form.last_name.errors %}<ul class="form-errors">{% for err in form.last_name.errors %}<li>{{ err }}</li>{% endfor %}</ul>{% endif %}
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label" for="{{ form.username.id_for_label }}">Username *</label>
+      {{ form.username }}
+      {% if form.username.errors %}<ul class="form-errors">{% for err in form.username.errors %}<li>{{ err }}</li>{% endfor %}</ul>{% endif %}
+    </div>
+
+    <div class="form-group">
+      <label class="form-label" for="{{ form.email.id_for_label }}">Email Address</label>
+      {{ form.email }}
+      {% if form.email.errors %}<ul class="form-errors">{% for err in form.email.errors %}<li>{{ err }}</li>{% endfor %}</ul>{% endif %}
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label" for="{{ form.password.id_for_label }}">Password *</label>
+        {{ form.password }}
+        {% if form.password.errors %}<ul class="form-errors">{% for err in form.password.errors %}<li>{{ err }}</li>{% endfor %}</ul>{% endif %}
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="{{ form.confirm_password.id_for_label }}">Confirm Password *</label>
+        {{ form.confirm_password }}
+        {% if form.confirm_password.errors %}<ul class="form-errors">{% for err in form.confirm_password.errors %}<li>{{ err }}</li>{% endfor %}</ul>{% endif %}
+      </div>
+    </div>
+
+    <div style="margin-top: 1.5rem;">
+      <button type="submit" class="btn btn-primary" style="width: 100%;" id="btn-submit-register">Create Account</button>
+    </div>
+  </form>
+
+  <div style="text-align: center; margin-top: 1.5rem; padding-top: 1.25rem; border-top: 1px solid var(--border-light); font-size: 0.9rem; color: var(--text-muted);">
+    Already have an account? <a href="{% url 'login' %}" style="color: var(--primary-dark); font-weight: 600; text-decoration: none;">Sign in</a>
+  </div>
+</div>
+{% endblock %}
