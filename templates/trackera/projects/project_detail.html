@@ -1,0 +1,186 @@
+{% extends "base.html" %}
+
+{% block title %}{{ project.title }} - Trackera{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <div style="display: flex; align-items: center; gap: 0.65rem; margin-bottom: 0.4rem;">
+      <a href="{% url 'project_list' %}" style="color: var(--text-muted); font-size: 0.9rem; text-decoration: none;">&larr; All Projects</a>
+      <span style="color: var(--text-muted);">&bull;</span>
+      <span class="badge badge-{{ project.status }}">{{ project.get_status_display }}</span>
+      <span class="badge badge-{{ project.priority }}">{{ project.get_priority_display }}</span>
+    </div>
+    <h1 class="page-title">{{ project.title }}</h1>
+    <p class="page-subtitle">Owned by <strong>{{ project.owner.get_full_name|default:project.owner.username }}</strong> &bull; Created {{ project.created_at|date:"M d, Y" }}</p>
+  </div>
+
+  <div style="display: flex; gap: 0.65rem; align-items: center;">
+    {% if is_owner %}
+    <a href="{% url 'task_create' project.pk %}" class="btn btn-primary" id="btn-add-task-to-project">+ Add Task</a>
+    <a href="{% url 'project_update' project.pk %}" class="btn btn-secondary">Edit Project</a>
+    <a href="{% url 'project_delete' project.pk %}" class="btn btn-danger btn-sm">Delete</a>
+    {% endif %}
+  </div>
+</div>
+
+{% if project.description %}
+<div class="card" style="margin-bottom: 1.5rem; background-color: #fafdfc;">
+  <h3 style="font-size: 0.95rem; font-weight: 600; color: var(--text-muted); margin-bottom: 0.4rem;">Project Scope &amp; Objectives</h3>
+  <p style="font-size: 0.95rem; color: var(--text-main); white-space: pre-line;">{{ project.description }}</p>
+</div>
+{% endif %}
+
+<!-- Project Metrics Cards (Computed via errorutils) -->
+<div class="grid grid-cols-4" style="margin-bottom: 2rem;">
+  <div class="stat-card">
+    <div class="stat-label">Completion</div>
+    <div class="stat-value">{{ metrics.completion_percentage }}%</div>
+    <div class="progress-bar-container">
+      <div class="progress-bar-fill" style="width: {{ metrics.completion_percentage }}%;"></div>
+    </div>
+    <div class="stat-meta">{{ metrics.completed_tasks }} of {{ metrics.total_tasks }} tasks done</div>
+  </div>
+
+  <div class="stat-card">
+    <div class="stat-label">Hours Breakdown</div>
+    <div class="stat-value">{{ metrics.total_logged_hours }}h</div>
+    <div class="stat-meta">
+      <span>Est: {{ metrics.total_estimated_hours }}h</span> &bull; <span>Avg/Task: {{ metrics.avg_estimated_hours }}h</span>
+    </div>
+  </div>
+
+  <div class="stat-card">
+    <div class="stat-label">Budget Allocated</div>
+    <div class="stat-value">${{ project.budget|floatformat:2 }}</div>
+    <div class="stat-meta">
+      {% if metrics.is_over_budget %}
+        <span style="color: #e11d48; font-weight: 600;">Cost exceeds budget</span>
+      {% else %}
+        <span style="color: var(--primary-dark); font-weight: 500;">Within allocation</span>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="stat-card">
+    <div class="stat-label">Projected Labor Cost</div>
+    <div class="stat-value">${{ metrics.projected_labor_cost|floatformat:2 }}</div>
+    <div class="stat-meta">
+      Variance: <span style="font-weight: 600; {% if metrics.budget_variance < 0 %}color: #e11d48;{% else %}color: var(--primary-dark);{% endif %}">
+        ${{ metrics.budget_variance|floatformat:2 }}
+      </span>
+    </div>
+  </div>
+</div>
+
+<!-- Project Tasks List -->
+<div class="card">
+  <div class="card-header">
+    <div style="display: flex; align-items: center; gap: 1rem;">
+      <h2 class="card-title">Tasks in this Project ({{ tasks.count }})</h2>
+      {% if metrics.overdue_tasks > 0 %}
+      <span class="badge badge-urgent">{{ metrics.overdue_tasks }} Overdue</span>
+      {% endif %}
+    </div>
+
+    <!-- Quick filter within project -->
+    <form method="get" style="display: flex; gap: 0.5rem; align-items: center;">
+      <select name="task_status" class="form-control auto-submit-filter" style="width: 160px; padding: 0.4rem 0.75rem; font-size: 0.85rem;">
+        <option value="">All Statuses</option>
+        {% for val, label in task_status_choices %}
+        <option value="{{ val }}" {% if selected_task_status == val %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+      {% if selected_task_status %}
+      <a href="{% url 'project_detail' project.pk %}" class="btn btn-secondary btn-sm">Clear</a>
+      {% endif %}
+    </form>
+  </div>
+
+  {% if tasks %}
+  <div class="table-responsive">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Task Title</th>
+          <th>Assignee</th>
+          <th>Priority</th>
+          <th>Status</th>
+          <th>Due Date</th>
+          <th>Hours (Log / Est)</th>
+          <th style="text-align: right;">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for t in tasks %}
+        <tr>
+          <td>
+            <a href="{% url 'task_detail' t.pk %}" style="font-weight: 600; color: var(--text-main); text-decoration: none;">
+              {{ t.title }}
+            </a>
+          </td>
+          <td>
+            {% if t.assigned_to %}
+              <span class="user-badge" style="display: inline-flex; padding: 0.2rem 0.5rem; font-size: 0.8rem;">
+                {{ t.assigned_to.first_name|default:t.assigned_to.username }}
+              </span>
+            {% else %}
+              <span style="color: var(--text-muted); font-size: 0.82rem;">Unassigned</span>
+            {% endif %}
+          </td>
+          <td>
+            <span class="badge badge-{{ t.priority }}">{{ t.get_priority_display }}</span>
+          </td>
+          <td>
+            <!-- Quick status update inline form -->
+            <form method="post" action="{% url 'task_quick_status' t.pk %}" class="quick-status-form" style="display: inline-block;">
+              {% csrf_token %}
+              <select name="status" class="form-control" style="padding: 0.25rem 0.5rem; font-size: 0.8rem; border-radius: var(--radius-sm); width: 125px;">
+                {% for st_val, st_lbl in task_status_choices %}
+                <option value="{{ st_val }}" {% if t.status == st_val %}selected{% endif %}>{{ st_lbl }}</option>
+                {% endfor %}
+              </select>
+            </form>
+          </td>
+          <td>
+            {% if t.due_date %}
+              <span style="font-size: 0.85rem; {% if t.is_overdue %}color: #e11d48; font-weight: 600;{% endif %}">
+                {{ t.due_date|date:"M d, Y" }}
+                {% if t.is_overdue %}&bull; Overdue{% endif %}
+              </span>
+            {% else %}
+              <span style="color: var(--text-muted); font-size: 0.82rem;">None</span>
+            {% endif %}
+          </td>
+          <td>
+            <span style="font-weight: 600; color: var(--primary-dark);">{{ t.total_logged_hours }}h</span>
+            <span style="color: var(--text-muted);">/ {{ t.estimated_hours }}h</span>
+          </td>
+          <td style="text-align: right;">
+            <div style="display: inline-flex; gap: 0.35rem;">
+              <a href="{% url 'task_detail' t.pk %}" class="btn btn-secondary btn-sm" title="View details and time logs">Details</a>
+              {% if is_owner or t.assigned_to == user %}
+              <a href="{% url 'task_update' t.pk %}" class="btn btn-outline-primary btn-sm" title="Edit task">Edit</a>
+              {% endif %}
+              {% if is_owner %}
+              <a href="{% url 'task_delete' t.pk %}" class="btn btn-danger btn-sm" title="Delete task">&times;</a>
+              {% endif %}
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty-state">
+    <div class="empty-state-icon">&check;</div>
+    <h3 class="empty-state-title">No tasks in this project yet</h3>
+    <p class="empty-state-text">Break this project down into manageable deliverables and assign them to team members.</p>
+    {% if is_owner %}
+    <a href="{% url 'task_create' project.pk %}" class="btn btn-primary btn-sm">+ Add First Task</a>
+    {% endif %}
+  </div>
+  {% endif %}
+</div>
+{% endblock %}
